@@ -1,8 +1,6 @@
 resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
-  tags = {
-    Name = "ops-vpc"
-  }
+  cidr_block = var.vpc_cidr
+  tags = merge(var.common_tags, { Name = var.vpc_name })
 }
 
 # Internet Gateway
@@ -29,20 +27,28 @@ resource "aws_route_table" "public" {
 }
 
 # Private Route Table
-resource "aws_route_table" "private" {
+resource "aws_route_table" "private_1" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "private-route-table"
+    Name = "private-route-table-1"
+  }
+}
+
+resource "aws_route_table" "private_2" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "private-route-table-2"
   }
 }
 
 # Public Subnets
 resource "aws_subnet" "public_1" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.1.0/24"
+  cidr_block              = var.public_subnet_cidrs[0]
   map_public_ip_on_launch = true
-  availability_zone       = "us-east-1a"
+  availability_zone       = var.availability_zones[0]
 
   tags = {
     Name = "public-subnet-1"
@@ -51,9 +57,9 @@ resource "aws_subnet" "public_1" {
 
 resource "aws_subnet" "public_2" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.2.0/24"
+  cidr_block              = var.public_subnet_cidrs[1]
   map_public_ip_on_launch = true
-  availability_zone       = "us-east-1b"
+  availability_zone       = var.availability_zones[1]
 
   tags = {
     Name = "public-subnet-2"
@@ -63,8 +69,8 @@ resource "aws_subnet" "public_2" {
 # Private Subnets
 resource "aws_subnet" "private_1" {
   vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.3.0/24"
-  availability_zone = "us-east-1a"
+  cidr_block        = var.private_subnet_cidrs[0]
+  availability_zone = var.availability_zones[0]
 
   tags = {
     Name = "private-subnet-1"
@@ -73,8 +79,8 @@ resource "aws_subnet" "private_1" {
 
 resource "aws_subnet" "private_2" {
   vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.4.0/24"
-  availability_zone = "us-east-1b"
+  cidr_block        = var.private_subnet_cidrs[1]
+  availability_zone = var.availability_zones[1]
 
   tags = {
     Name = "private-subnet-2"
@@ -95,12 +101,12 @@ resource "aws_route_table_association" "public_2" {
 # Associate Private Subnets with Private Route Table
 resource "aws_route_table_association" "private_1" {
   subnet_id      = aws_subnet.private_1.id
-  route_table_id = aws_route_table.private.id
+  route_table_id = aws_route_table.private_1.id
 }
 
 resource "aws_route_table_association" "private_2" {
   subnet_id      = aws_subnet.private_2.id
-  route_table_id = aws_route_table.private.id
+  route_table_id = aws_route_table.private_2.id
 }
 
 # Elastic IPs for NAT Gateways
@@ -114,6 +120,7 @@ resource "aws_eip" "nat_2" {
 
 # NAT Gateways for Private Subnets
 resource "aws_nat_gateway" "nat_1" {
+  count        = var.enable_nat_gateway ? 1 : 0
   allocation_id = aws_eip.nat_1.id
   subnet_id     = aws_subnet.public_1.id
 
@@ -123,6 +130,7 @@ resource "aws_nat_gateway" "nat_1" {
 }
 
 resource "aws_nat_gateway" "nat_2" {
+  count        = var.enable_nat_gateway ? 1 : 0
   allocation_id = aws_eip.nat_2.id
   subnet_id     = aws_subnet.public_2.id
 
@@ -133,7 +141,12 @@ resource "aws_nat_gateway" "nat_2" {
 
 # Add NAT Gateways to Private Route Table
 resource "aws_route" "private_nat_1" {
-  route_table_id         = aws_route_table.private.id
+  route_table_id         = aws_route_table.private_1.id
   destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.nat_1.id
+  nat_gateway_id         = aws_nat_gateway.nat_1[0].id
+}
+resource "aws_route" "private_nat_2" {
+  route_table_id         = aws_route_table.private_2.id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.nat_2[0].id
 }
