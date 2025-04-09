@@ -83,18 +83,15 @@ resource "aws_route_table_association" "private" {
 }
 
 # Elastic IPs for NAT Gateways
-resource "aws_eip" "nat_1" {
-  domain = "vpc"
-}
-
-resource "aws_eip" "nat_2" {
-  domain = "vpc"
+resource "aws_eip" "nat" {
+  for_each = aws_subnet.public
+  domain   = "vpc"
 }
 
 # NAT Gateways for Private Subnets
 resource "aws_nat_gateway" "nat" {
   for_each    = aws_subnet.public
-  allocation_id = aws_eip.nat_1.id
+  allocation_id = aws_eip.nat[each.key].id
   subnet_id     = each.value.id
 
   tags = merge(var.common_tags, { Name = "nat-gateway-${each.key}" })
