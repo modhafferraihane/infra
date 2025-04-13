@@ -1,6 +1,6 @@
 resource "aws_vpc" "main" {
   cidr_block = var.vpc_cidr
-  tags = merge(var.common_tags, { Name = var.vpc_name })
+  tags       = merge(var.common_tags, { Name = var.vpc_name })
 }
 
 # Internet Gateway
@@ -8,7 +8,7 @@ resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "main-igw"
+    Name = var.internet_gateway_name
   }
 }
 
@@ -20,9 +20,8 @@ resource "aws_route_table" "public" {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.igw.id
   }
-
   tags = {
-    Name = "public-route-table"
+    Name = var.public_route_table_name
   }
 }
 
@@ -31,7 +30,7 @@ resource "aws_route_table" "private_1" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "private-route-table-1"
+    Name = var.private_route_table_1_name
   }
 }
 
@@ -39,7 +38,7 @@ resource "aws_route_table" "private_2" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "private-route-table-2"
+    Name = var.private_route_table_2_name
   }
 }
 
@@ -90,7 +89,7 @@ resource "aws_eip" "nat" {
 
 # NAT Gateways for Private Subnets
 resource "aws_nat_gateway" "nat" {
-  for_each    = aws_subnet.public
+  for_each      = aws_subnet.public
   allocation_id = aws_eip.nat[each.key].id
   subnet_id     = each.value.id
 

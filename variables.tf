@@ -1,12 +1,10 @@
 variable "vpc_name" {
   description = "The name of the VPC"
   type        = string
-  default     = "ops-vpc"
 }
 variable "vpc_cidr" {
   description = "The CIDR block for the VPC"
   type        = string
-  default     = "10.0.0.0/16"
 }
 variable "public_subnets" {
   description = "List of public subnets"
@@ -15,18 +13,7 @@ variable "public_subnets" {
     availability_zone = string
     name              = string
   }))
-  default = [
-    {
-      cidr_block        = "10.0.1.0/24"
-      availability_zone = "us-east-1a"
-      name              = "public-subnet-1"
-    },
-    {
-      cidr_block        = "10.0.2.0/24"
-      availability_zone = "us-east-1b"
-      name              = "public-subnet-2"
-    }
-  ]
+
 }
 
 variable "private_subnets" {
@@ -36,24 +23,12 @@ variable "private_subnets" {
     availability_zone = string
     name              = string
   }))
-  default = [
-    {
-      cidr_block        = "10.0.3.0/24"
-      availability_zone = "us-east-1a"
-      name              = "private-subnet-1"
-    },
-    {
-      cidr_block        = "10.0.4.0/24"
-      availability_zone = "us-east-1b"
-      name              = "private-subnet-2"
-    }
-  ]
 }
 
 variable "common_tags" {
   description = "Common tags for all resources"
   type        = map(string)
-  default     = {
+  default = {
     Environment = "dev"
     Project     = "terraform-aws"
   }
@@ -63,4 +38,21 @@ variable "enable_nat_gateway" {
   description = "Enable or disable NAT Gateways"
   type        = bool
   default     = true
+}
+
+variable "internet_gateway_name" {
+  description = "The name of the Internet Gateway"
+  type        = string
+}
+variable "public_route_table_name" {
+  description = "The name of the public route table"
+  type        = string
+}
+variable "private_route_table_1_name" {
+  description = "The name of the private route table 1"
+  type        = string
+}
+variable "private_route_table_2_name" {
+  description = "The name of the private route table 2"
+  type        = string
 }
