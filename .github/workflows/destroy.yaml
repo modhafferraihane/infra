@@ -2,6 +2,16 @@ name: Terraform Destroy
 
 on:
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Select the Terraform workspace'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
 
 jobs:
   terraform:
@@ -28,7 +38,7 @@ jobs:
         run: terraform init
 
       - name: 'Set workspace or create if not exists'
-        run: terraform workspace select default || terraform workspace new default
+        run: terraform workspace select ${{ inputs.environment }}  || terraform workspace new ${{ inputs.environment }} 
 
       - name: 'Terraform Validate'
         run: terraform validate
